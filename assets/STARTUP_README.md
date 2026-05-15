@@ -206,5 +206,3 @@ Si algo falla:
 ---
 
 **Creado**: Mayo 2026  
-**Stack**: Spring Boot Migration (Express → Spring Boot)  
-**Autor**: Forum Workshop Team

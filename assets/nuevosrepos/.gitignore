@@ -1,0 +1,45 @@
+# ============================================================
+# .gitignore para Workshop Fullstack (Quarkus + Spring Boot + Angular)
+# ============================================================
+
+# --- Java / Maven ---
+target/
+*.class
+*.jar
+*.war
+*.ear
+.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
+
+# --- Node.js / Angular ---
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+yarn-error.log
+
+# --- IDEs ---
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# --- Sistemas operativos ---
+.DS_Store
+Thumbs.db
+
+# --- Variables de entorno ---
+.env
+.env.local
+.env.*.local
+
+# --- Logs ---
+*.log
+logs/

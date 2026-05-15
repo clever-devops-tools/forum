@@ -1,0 +1,21 @@
+services:
+  postgres-app:
+    image: postgres:16
+    container_name: postgres-app
+    environment:
+      POSTGRES_DB: personasdb
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_app_data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d personasdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_app_data:

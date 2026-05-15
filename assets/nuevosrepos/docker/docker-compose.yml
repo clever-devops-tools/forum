@@ -17,5 +17,35 @@ services:
       timeout: 5s
       retries: 10
 
+  middle-app:
+    image: maven:3.9.9-eclipse-temurin-21
+    container_name: middle-app
+    working_dir: /workspace/middle
+    command: mvn spring-boot:run
+    environment:
+      SERVER_PORT: 3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../../../middle:/workspace/middle
+      - middle_m2_cache:/root/.m2
+    depends_on:
+      - postgres-app
+
+  frontend-app:
+    image: node:20-bookworm
+    container_name: frontend-app
+    working_dir: /workspace/frontend
+    command: sh -lc "npm install && npm run start"
+    ports:
+      - "4200:4200"
+    volumes:
+      - ../../../frontend:/workspace/frontend
+      - frontend_node_modules:/workspace/frontend/node_modules
+    depends_on:
+      - middle-app
+
 volumes:
   postgres_app_data:
+  middle_m2_cache:
+  frontend_node_modules:

@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Levanta el ambiente completo del Workshop Fullstack - Forum App (Windows).
 .DESCRIPTION
@@ -166,19 +166,15 @@ if (Test-Path $apiDir) {
 }
 
 if (Test-Path $middleDir) {
-    $middleMvnw = Join-Path $middleDir "mvnw.cmd"
-    if (Test-Path $middleMvnw) {
-        Start-ServiceJob -JobName "forum-middle" -ServiceDir $middleDir -Command $middleMvnw -Arguments @("spring-boot:run") | Out-Null
-        Write-Host "✓ Job forum-middle iniciado" -ForegroundColor Green
-    } elseif (Test-Tool -Name "mvn") {
-        Start-ServiceJob -JobName "forum-middle" -ServiceDir $middleDir -Command "mvn" -Arguments @("spring-boot:run") | Out-Null
-        Write-Host "✓ Job forum-middle iniciado" -ForegroundColor Green
-    } else {
-        Write-Host "⚠ Se encontró middle/, pero no mvnw.cmd ni mvn en PATH. Middle no iniciado." -ForegroundColor Yellow
+    try {
+        & docker compose up -d middle-app | Out-Host
+    } catch {
+        Write-Host "⚠ Falló el primer intento de levantar middle-app. Reintentando..." -ForegroundColor Yellow
+        & docker compose up -d middle-app | Out-Host
     }
 
     if (-not $NoWait) {
-        if (Wait-HttpReady -Url "http://localhost:3000/health" -MaxWaitSeconds 90) {
+        if (Wait-HttpReady -Url "http://localhost:3000/health" -MaxWaitSeconds 120) {
             Write-Host "✓ Middle disponible en http://localhost:3000" -ForegroundColor Green
         } else {
             Write-Host "⚠ Middle no respondió en /health dentro del tiempo esperado." -ForegroundColor Yellow
@@ -191,29 +187,18 @@ if (Test-Path $middleDir) {
 Write-Host "`n[4/4] Iniciando Frontend (si existe)..." -ForegroundColor Yellow
 
 if (Test-Path $frontendDir) {
-    if (-not (Test-Tool -Name "npm")) {
-        Write-Host "⚠ Se encontró frontend/, pero npm no está disponible. Frontend no iniciado." -ForegroundColor Yellow
-    } else {
-        Set-Location $frontendDir
-        if (-not (Test-Path (Join-Path $frontendDir "node_modules"))) {
-            if (Test-Path (Join-Path $frontendDir "package-lock.json")) {
-                Write-Host "Instalando dependencias con npm ci..." -ForegroundColor Cyan
-                & npm ci | Out-Host
-            } else {
-                Write-Host "Instalando dependencias con npm install..." -ForegroundColor Cyan
-                & npm install | Out-Host
-            }
-        }
+    try {
+        & docker compose up -d frontend-app | Out-Host
+    } catch {
+        Write-Host "⚠ Falló el primer intento de levantar frontend-app. Reintentando..." -ForegroundColor Yellow
+        & docker compose up -d frontend-app | Out-Host
+    }
 
-        Start-ServiceJob -JobName "forum-frontend" -ServiceDir $frontendDir -Command "npm" -Arguments @("start") | Out-Null
-        Write-Host "✓ Job forum-frontend iniciado" -ForegroundColor Green
-
-        if (-not $NoWait) {
-            if (Wait-HttpReady -Url "http://localhost:4200" -MaxWaitSeconds 120) {
-                Write-Host "✓ Frontend disponible en http://localhost:4200" -ForegroundColor Green
-            } else {
-                Write-Host "⚠ Frontend no respondió en http://localhost:4200 dentro del tiempo esperado." -ForegroundColor Yellow
-            }
+    if (-not $NoWait) {
+        if (Wait-HttpReady -Url "http://localhost:4200" -MaxWaitSeconds 120) {
+            Write-Host "✓ Frontend disponible en http://localhost:4200" -ForegroundColor Green
+        } else {
+            Write-Host "⚠ Frontend no respondió en http://localhost:4200 dentro del tiempo esperado." -ForegroundColor Yellow
         }
     }
 } else {

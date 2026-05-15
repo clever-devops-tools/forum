@@ -1,208 +1,145 @@
-# 🚀 Scripts de Levantamiento del Ambiente - Forum Workshop
+# Scripts de Arranque del Workshop (Windows)
 
-Scripts PowerShell para levantar/detener rápidamente todo el ambiente del workshop fullstack en **Windows 11**.
+Este documento explica los prerequisitos y el uso de los scripts de [startup.ps1](startup.ps1) y [shutdown.ps1](shutdown.ps1) para levantar y apagar el ambiente local del workshop con un solo comando.
 
-## Requisitos Previos
+## Prerequisitos para asistentes (instalar antes del workshop)
 
-Asegúrate de tener instalado:
+Instala y valida esto con anticipacion:
 
-- ✅ **Docker Desktop** (con WSL2) → https://www.docker.com/products/docker-desktop
-- ✅ **Node.js 20+** → https://nodejs.org/
-- ✅ **Java 21** (Amazon Corretto) → instalado en `C:\Program Files\Amazon Corretto\jdk21.0.11_10`
-- ✅ **Maven** (bundled en IntelliJ) → `C:\Program Files\JetBrains\IntelliJ IDEA 2024.2.4\plugins\maven\lib\maven3\bin\mvn.cmd`
-- ✅ **Git** → https://git-scm.com/
-
-## Uso Rápido
-
-### 1. **Levantar Ambiente (PRIMER VEZ)**
+1. Docker Desktop (con motor Docker Compose habilitado)
+- Descarga: https://www.docker.com/products/docker-desktop
+- Validacion:
 
 ```powershell
-cd C:\Users\<tu-usuario>\forumcopilot\assets
-.\startup.ps1
+docker --version
+docker compose version
 ```
 
-**¿Qué hace?**
-1. Verifica herramientas necesarias (Docker, Node, Java, Maven)
-2. Inicia PostgreSQL en Docker
-3. Inicia Quarkus API (puerto 8080)
-4. Inicia Spring Boot Middle (puerto 3000)
-5. Instala y inicia Angular Frontend (puerto 4200)
-
-### 2. **Acceder a los Servicios**
-
-Una vez que el script termina, abre en tu navegador:
-
-| Componente | URL | Descripción |
-|------------|-----|-------------|
-| **Frontend** | http://localhost:4200 | Interfaz de usuario Angular |
-| **API Quarkus** | http://localhost:8080 | Backend REST con datos |
-| **Middle (BFF)** | http://localhost:3000 | Backend for Frontend (Spring Boot) |
-| **Búsqueda** | http://localhost:3000/middle/personas?idTipo=DNI&idValor=12345678 | Endpoint de ejemplo |
-| **Health** | http://localhost:3000/health | Estado del middleware |
-
-### 3. **Detener Ambiente**
+2. Git
+- Descarga: https://git-scm.com/download/win
+- Validacion:
 
 ```powershell
-cd C:\Users\<tu-usuario>\forumcopilot\assets
-.\shutdown.ps1
+git --version
 ```
 
-**¿Qué hace?**
-- Detiene todos los procesos Java en background
-- Libera puertos 3000, 8080, 4200
-- Detiene Docker containers (PostgreSQL)
+3. Node.js LTS (recomendado v20+)
+- Descarga: https://nodejs.org/
+- Validacion:
 
-## Troubleshooting
+```powershell
+node -v
+npm -v
+```
 
-### ❌ "Docker not found"
-- Instala Docker Desktop desde https://www.docker.com/products/docker-desktop
-- Reinicia PowerShell después de instalar
+4. Java 21
+- Recomendado: Amazon Corretto 21
+- Validacion:
 
-### ❌ "Java 21 not found"
-- Verifica que esté instalado en `C:\Program Files\Amazon Corretto\jdk21.0.11_10`
-- Si está en otra ruta, edita `startup.ps1` línea `$javaHome = "..."`
+```powershell
+java -version
+```
 
-### ❌ "Maven not found"
-- Instala IntelliJ IDEA o actualiza la ruta en `startup.ps1` línea `$mvnCmd = "..."`
+5. Maven (solo si el repo no trae mvnw.cmd en api o middle)
+- Validacion:
 
-### ❌ "Port 3000/8080 already in use"
-- Ejecuta `.\shutdown.ps1` para liberar puertos
-- O ejecuta en terminal: `netstat -ano | findstr :3000`
+```powershell
+mvn -version
+```
 
-### ❌ "Scripts disabled" error
-Si PowerShell no permite ejecutar scripts, abre PowerShell como **Administrador** y ejecuta:
+6. PowerShell con permisos para scripts
+- Si aparece error de execution policy:
 
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
-Luego reintenta:
+## Estructura esperada del repositorio
+
+Los scripts estan alineados a esta estructura:
+
+- [nuevosrepos/docker/docker-compose.yml](nuevosrepos/docker/docker-compose.yml)
+- [nuevosrepos/docker/init/01-schema-and-seed.sql](nuevosrepos/docker/init/01-schema-and-seed.sql)
+- Carpeta api en la raiz del repo (opcional)
+- Carpeta middle en la raiz del repo (opcional)
+- Carpeta frontend en la raiz del repo (opcional)
+
+Nota: si api, middle o frontend aun no existen, startup levanta igualmente PostgreSQL y continua sin fallar.
+
+## Levantar todo con un comando
+
+Desde la carpeta assets ejecuta:
+
 ```powershell
 .\startup.ps1
 ```
 
-## Monitoreo en Tiempo Real
+Que hace startup:
 
-### Ver logs de Quarkus
+1. Valida Docker y docker compose.
+2. Levanta PostgreSQL desde [nuevosrepos/docker/docker-compose.yml](nuevosrepos/docker/docker-compose.yml).
+3. Espera estado healthy de postgres-app.
+4. Si existe api, inicia Quarkus en job forum-api.
+5. Si existe middle, inicia Spring Boot en job forum-middle.
+6. Si existe frontend, instala dependencias si hace falta e inicia Angular en job forum-frontend.
+
+## Apagar todo con un comando
+
+Desde la carpeta assets ejecuta:
+
 ```powershell
-Get-Job -Name *api* | Receive-Job -Keep
+.\shutdown.ps1
 ```
 
-### Ver logs de Middle (Spring Boot)
+Que hace shutdown:
+
+1. Detiene jobs forum-api, forum-middle y forum-frontend.
+2. Libera puertos 4200, 3000 y 8080.
+3. Ejecuta docker compose down en [nuevosrepos/docker](nuevosrepos/docker).
+
+## Verificacion rapida de base de datos
+
+La base se inicializa automaticamente con [nuevosrepos/docker/init/01-schema-and-seed.sql](nuevosrepos/docker/init/01-schema-and-seed.sql).
+
+Credenciales:
+
+- Host: localhost
+- Puerto: 5432
+- Base: personasdb
+- Usuario: appuser
+- Password: apppass
+
+Consulta de verificacion:
+
 ```powershell
-Get-Job -Name *middle* | Receive-Job -Keep
+docker exec postgres-app psql -U appuser -d personasdb -c "SELECT id_tipo, id_valor, nombres, apellidos FROM personas ORDER BY id_tipo, id_valor;"
 ```
 
-### Ver logs de Frontend (Angular)
+## Monitoreo de logs
+
 ```powershell
-Get-Job -Name *frontend* | Receive-Job -Keep
+Get-Job -Name forum-api | Receive-Job -Keep
+Get-Job -Name forum-middle | Receive-Job -Keep
+Get-Job -Name forum-frontend | Receive-Job -Keep
 ```
 
-### Listar todos los jobs activos
+## Troubleshooting corto
+
+1. Docker no responde
+- Abre Docker Desktop y espera que este en estado Running.
+
+2. Puerto ocupado
+- Ejecuta [shutdown.ps1](shutdown.ps1) y vuelve a iniciar.
+
+3. API/Middle no arrancan
+- Verifica Java 21 y Maven o wrapper mvnw.cmd.
+
+4. Frontend no arranca
+- Verifica Node y npm.
+
+5. Reintento limpio
+
 ```powershell
-Get-Job
+.\shutdown.ps1
+.\startup.ps1
 ```
-
-### Matar un job específico (si falla algo)
-```powershell
-Stop-Job -Name "<job-name>"
-Remove-Job -Name "<job-name>"
-```
-
-## Configuración de Base de Datos
-
-| Parámetro | Valor |
-|-----------|-------|
-| Host | localhost |
-| Puerto | 5432 |
-| Base de datos | personasdb |
-| Usuario | appuser |
-| Contraseña | apppass |
-
-Para conectarse manualmente con psql:
-```bash
-psql -h localhost -U appuser -d personasdb
-```
-
-## Flujo de Datos (End-to-End)
-
-```
-┌─────────────────────────────────────────────────────────┐
-│ Angular Frontend (http://localhost:4200)                │
-│  "Buscar personas por DNI"                              │
-└────────────────┬────────────────────────────────────────┘
-                 │ GET /middle/personas?idTipo=DNI&idValor=...
-                 ↓
-┌─────────────────────────────────────────────────────────┐
-│ Spring Boot Middle (http://localhost:3000)              │
-│  - Recibe parámetros                                    │
-│  - Transforma camelCase (idTipo → idType)               │
-│  - Llama a Quarkus API                                  │
-└────────────────┬────────────────────────────────────────┘
-                 │ GET /api/personas/search?idTipo=DNI&idValor=...
-                 ↓
-┌─────────────────────────────────────────────────────────┐
-│ Quarkus API (http://localhost:8080)                     │
-│  - Consulta PostgreSQL                                  │
-│  - Retorna JSON                                         │
-└────────────────┬────────────────────────────────────────┘
-                 │
-                 ↓
-┌─────────────────────────────────────────────────────────┐
-│ PostgreSQL (localhost:5432)                             │
-│  - Tabla: persona                                       │
-│  - Registros: 3 personas de ejemplo                     │
-└─────────────────────────────────────────────────────────┘
-```
-
-## Ejemplo de Búsqueda
-
-1. Abre http://localhost:4200 en el navegador
-2. Ingresa:
-   - **Tipo ID**: DNI
-   - **Valor**: 12345678
-3. El frontend llama a `/middle/personas?idTipo=DNI&idValor=12345678`
-4. Se devuelve:
-```json
-{
-  "id": 1,
-  "fullName": "Juan Perez",
-  "idType": "DNI",
-  "idValue": "12345678",
-  "email": "juan@forum.cl",
-  "phone": "+56912345678",
-  "birthDate": "1990-05-10"
-}
-```
-
-## Notas Importantes
-
-- Los scripts usan **PowerShell 5.0+** (PowerShell Core no es necesario)
-- Deben ejecutarse como **Administrador** (requerido para Docker)
-- Los servicios se inician en **background jobs** (no bloquean la terminal)
-- Para ver todos los logs juntos, abre 3 ventanas PowerShell separadas y en cada una corre:
-  ```powershell
-  Get-Job -Name "*api*" | Receive-Job -Keep -Wait
-  ```
-
-## Stack Tecnológico
-
-| Capa | Tecnología | Puerto |
-|------|-----------|--------|
-| Frontend | Angular 18 + TypeScript | 4200 |
-| BFF (Middle) | Spring Boot 3.3.2 | 3000 |
-| API | Quarkus 3.8.1 | 8080 |
-| Base de Datos | PostgreSQL 15 | 5432 |
-| Orquestación | Docker Compose | - |
-
-## Soporte
-
-Si algo falla:
-1. Revisa los logs (ver sección "Monitoreo en Tiempo Real")
-2. Ejecuta `.\shutdown.ps1` y limpia
-3. Reintenta `.\startup.ps1`
-4. Si persiste, verifica que Docker esté corriendo: `docker ps`
-
----
-
-**Creado**: Mayo 2026  

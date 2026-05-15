@@ -1,78 +1,74 @@
-#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
-    Detiene todos los servicios del Workshop Fullstack
+    Detiene todos los servicios del Workshop Fullstack.
 .DESCRIPTION
-    Script que detiene:
-    - Procesos Java (Quarkus, Spring Boot)
-    - Docker containers (PostgreSQL)
+    Detiene:
+    - Jobs iniciados por startup.ps1 (forum-api, forum-middle, forum-frontend)
+    - Procesos remanentes en puertos 4200, 3000 y 8080
+    - PostgreSQL en Docker Compose
 .EXAMPLE
     .\shutdown.ps1
 #>
 
-Write-Host "
-╔═══════════════════════════════════════════════════════════════╗
-║         FORUM WORKSHOP - SHUTDOWN LOCAL ENVIRONMENT          ║
-╚═══════════════════════════════════════════════════════════════╝
-" -ForegroundColor Yellow
+$ErrorActionPreference = "Continue"
 
-Write-Host "`n[1/3] Deteniendo procesos de background jobs..." -ForegroundColor Cyan
-Get-Job | ForEach-Object {
-    Write-Host "  Eliminando job: $($_.Name)" -ForegroundColor Gray
-    Stop-Job -Job $_ -ErrorAction SilentlyContinue
-    Remove-Job -Job $_ -ErrorAction SilentlyContinue
-}
+function Stop-PortProcess {
+    param(
+        [int]$Port,
+        [string]$Label
+    )
 
-Write-Host "`n[2/3] Liberando puertos (matando procesos Java en 3000 y 8080)..." -ForegroundColor Cyan
+    $listener = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $listener) {
+        return
+    }
 
-# Middle en puerto 3000
-$middle = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
-if ($middle) {
-    $pid = $middle.OwningProcess
-    $proc = Get-Process -Id $pid -ErrorAction SilentlyContinue
+    $owningPid = $listener.OwningProcess
+    $proc = Get-Process -Id $owningPid -ErrorAction SilentlyContinue
     if ($proc) {
-        Write-Host "  Parando Spring Boot Middle (PID: $pid)" -ForegroundColor Gray
-        Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
-        Start-Sleep -Seconds 1
+        Write-Host "  Parando $Label (PID: $owningPid)" -ForegroundColor Gray
+        Stop-Process -Id $owningPid -Force -ErrorAction SilentlyContinue
     }
 }
 
-# API en puerto 8080
-$api = Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
-if ($api) {
-    $pid = $api.OwningProcess
-    $proc = Get-Process -Id $pid -ErrorAction SilentlyContinue
-    if ($proc) {
-        Write-Host "  Parando Quarkus API (PID: $pid)" -ForegroundColor Gray
-        Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
-        Start-Sleep -Seconds 1
+Write-Host ""
+Write-Host "╔═══════════════════════════════════════════════════════════════╗" -ForegroundColor Yellow
+Write-Host "║         FORUM WORKSHOP - SHUTDOWN LOCAL ENVIRONMENT          ║" -ForegroundColor Yellow
+Write-Host "╚═══════════════════════════════════════════════════════════════╝" -ForegroundColor Yellow
+
+Write-Host "`n[1/3] Deteniendo jobs del workshop..." -ForegroundColor Cyan
+
+$jobNames = @("forum-api", "forum-middle", "forum-frontend")
+foreach ($name in $jobNames) {
+    $job = Get-Job -Name $name -ErrorAction SilentlyContinue
+    if ($job) {
+        Write-Host "  Eliminando job: $name" -ForegroundColor Gray
+        Stop-Job -Name $name -ErrorAction SilentlyContinue
+        Remove-Job -Name $name -ErrorAction SilentlyContinue
     }
 }
 
-Write-Host "`n[3/3] Deteniendo Docker containers..." -ForegroundColor Cyan
+Write-Host "`n[2/3] Liberando puertos de servicios locales..." -ForegroundColor Cyan
+Stop-PortProcess -Port 4200 -Label "Angular Frontend"
+Stop-PortProcess -Port 3000 -Label "Spring Boot Middle"
+Stop-PortProcess -Port 8080 -Label "Quarkus API"
 
-$infraDir = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$infraDir = Join-Path $infraDir "infra"
+Write-Host "`n[3/3] Deteniendo PostgreSQL en Docker Compose..." -ForegroundColor Cyan
 
-if (Test-Path $infraDir) {
-    Set-Location $infraDir
-    Write-Host "  Ejecutando: docker compose down" -ForegroundColor Gray
-    & docker compose down 2>&1 | Where-Object { $_ -match "postgres|removed|Stopping" }
+$assetsDir = $PSScriptRoot
+$dockerDir = Join-Path $assetsDir "nuevosrepos\docker"
+
+if (Test-Path $dockerDir) {
+    Set-Location $dockerDir
+    & docker compose down | Out-Host
     Write-Host "  ✓ Containers detenidos" -ForegroundColor Green
 } else {
-    Write-Host "  ⚠ Carpeta infra no encontrada en $infraDir" -ForegroundColor Yellow
+    Write-Host "  ⚠ No se encontró carpeta docker esperada: $dockerDir" -ForegroundColor Yellow
 }
 
-Write-Host "`n
-╔═══════════════════════════════════════════════════════════════╗
-║                 ✓ SERVICIOS DETENIDOS                        ║
-╚═══════════════════════════════════════════════════════════════╝
-" -ForegroundColor Green
+Write-Host "`n╔═══════════════════════════════════════════════════════════════╗" -ForegroundColor Green
+Write-Host "║                 ✓ SERVICIOS DETENIDOS                        ║" -ForegroundColor Green
+Write-Host "╚═══════════════════════════════════════════════════════════════╝" -ForegroundColor Green
 
-Write-Host "`nProcesos activos restantes:" -ForegroundColor Cyan
-Get-Job -ErrorAction SilentlyContinue | Format-Table -Property Id, Name, State -AutoSize
-
-Write-Host "`nPara reiniciar el ambiente, ejecuta:" -ForegroundColor Yellow
-Write-Host "  .\startup.ps1" -ForegroundColor White
-
-Write-Host "`n✓ Shutdown completado." -ForegroundColor Green
+Write-Host "`nPara volver a levantar todo:" -ForegroundColor Yellow
+Write-Host "  .\startup.ps1"

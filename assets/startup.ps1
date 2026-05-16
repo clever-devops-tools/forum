@@ -2,12 +2,12 @@
 .SYNOPSIS
     Levanta el ambiente completo del Workshop Fullstack - Forum App (Windows).
 .DESCRIPTION
-    Inicia PostgreSQL por Docker Compose y, si existen, también:
+    Inicia PostgreSQL por Docker Compose y, si existen, tambien:
     - Quarkus API (puerto 8080)
     - Spring Boot Middle (puerto 3000)
     - Angular Frontend (puerto 4200)
 
-    Diseñado para la estructura actual del repo:
+    Estructura esperada:
     - assets/nuevosrepos/docker/docker-compose.yml
     - api/
     - middle/
@@ -41,8 +41,9 @@ function Wait-HttpReady {
                 return $true
             }
         } catch {
-            # Sigue esperando hasta timeout.
+            # Continue waiting until timeout.
         }
+
         Start-Sleep -Seconds 2
         $elapsed += 2
     }
@@ -72,11 +73,10 @@ function Start-ServiceJob {
 }
 
 Write-Host ""
-Write-Host "╔═══════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║         FORUM WORKSHOP - STARTUP LOCAL ENVIRONMENT           ║" -ForegroundColor Cyan
-Write-Host "╚═══════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+Write-Host "===============================================================" -ForegroundColor Cyan
+Write-Host " FORUM WORKSHOP - STARTUP LOCAL ENVIRONMENT" -ForegroundColor Cyan
+Write-Host "===============================================================" -ForegroundColor Cyan
 
-# Rutas basadas en la estructura actual del repositorio.
 $assetsDir = $PSScriptRoot
 $repoRoot = Split-Path -Parent $assetsDir
 $dockerDir = Join-Path $assetsDir "nuevosrepos\docker"
@@ -87,23 +87,23 @@ $frontendDir = Join-Path $repoRoot "frontend"
 Write-Host "`n[1/4] Validando prerequisitos..." -ForegroundColor Yellow
 
 if (-not (Test-Tool -Name "docker")) {
-    Write-Host "✗ Docker no encontrado. Instálalo desde https://www.docker.com/products/docker-desktop" -ForegroundColor Red
+    Write-Host "X Docker no encontrado. Instalalo desde https://www.docker.com/products/docker-desktop" -ForegroundColor Red
     exit 1
 }
 
 if (-not (Test-Path $dockerDir)) {
-    Write-Host "✗ No se encontró la carpeta Docker esperada: $dockerDir" -ForegroundColor Red
+    Write-Host "X No se encontro la carpeta Docker esperada: $dockerDir" -ForegroundColor Red
     exit 1
 }
 
 try {
     $null = & docker compose version
 } catch {
-    Write-Host "✗ docker compose no está disponible. Revisa tu instalación de Docker Desktop." -ForegroundColor Red
+    Write-Host "X docker compose no esta disponible. Revisa Docker Desktop." -ForegroundColor Red
     exit 1
 }
 
-Write-Host "✓ Docker y docker compose disponibles" -ForegroundColor Green
+Write-Host "OK Docker y docker compose disponibles" -ForegroundColor Green
 
 Write-Host "`n[2/4] Iniciando PostgreSQL (Docker Compose)..." -ForegroundColor Yellow
 Set-Location $dockerDir
@@ -111,7 +111,7 @@ Set-Location $dockerDir
 try {
     & docker compose up -d postgres-app | Out-Host
 } catch {
-    Write-Host "⚠ Falló el primer intento de levantar postgres-app. Reintentando..." -ForegroundColor Yellow
+    Write-Host "WARN Fallo el primer intento de levantar postgres-app. Reintentando..." -ForegroundColor Yellow
     & docker compose up -d postgres-app | Out-Host
 }
 
@@ -134,9 +134,9 @@ if (-not $NoWait) {
     }
 
     if ($status -eq "healthy") {
-        Write-Host "✓ PostgreSQL healthy" -ForegroundColor Green
+        Write-Host "OK PostgreSQL healthy" -ForegroundColor Green
     } else {
-        Write-Host "⚠ PostgreSQL no reportó estado healthy a tiempo. Revisa: docker compose ps" -ForegroundColor Yellow
+        Write-Host "WARN PostgreSQL no reporto estado healthy a tiempo. Revisa: docker compose ps" -ForegroundColor Yellow
     }
 }
 
@@ -146,53 +146,53 @@ if (Test-Path $apiDir) {
     $apiMvnw = Join-Path $apiDir "mvnw.cmd"
     if (Test-Path $apiMvnw) {
         Start-ServiceJob -JobName "forum-api" -ServiceDir $apiDir -Command $apiMvnw -Arguments @("quarkus:dev") | Out-Null
-        Write-Host "✓ Job forum-api iniciado" -ForegroundColor Green
+        Write-Host "OK Job forum-api iniciado" -ForegroundColor Green
     } elseif (Test-Tool -Name "mvn") {
         Start-ServiceJob -JobName "forum-api" -ServiceDir $apiDir -Command "mvn" -Arguments @("quarkus:dev") | Out-Null
-        Write-Host "✓ Job forum-api iniciado" -ForegroundColor Green
+        Write-Host "OK Job forum-api iniciado" -ForegroundColor Green
     } else {
-        Write-Host "⚠ Se encontró api/, pero no mvnw.cmd ni mvn en PATH. API no iniciada." -ForegroundColor Yellow
+        Write-Host "WARN Se encontro api/, pero no mvnw.cmd ni mvn en PATH. API no iniciada." -ForegroundColor Yellow
     }
 
     if (-not $NoWait) {
         if (Wait-HttpReady -Url "http://localhost:8080/q/health" -MaxWaitSeconds 120) {
-            Write-Host "✓ API disponible en http://localhost:8080" -ForegroundColor Green
+            Write-Host "OK API disponible en http://localhost:8080" -ForegroundColor Green
         } else {
-            Write-Host "⚠ API no respondió en /q/health dentro del tiempo esperado." -ForegroundColor Yellow
+            Write-Host "WARN API no respondio en /q/health dentro del tiempo esperado." -ForegroundColor Yellow
         }
     }
 } else {
-    Write-Host "ℹ Carpeta api/ no existe todavía. Se omite arranque de Quarkus." -ForegroundColor Cyan
+    Write-Host "INFO Carpeta api/ no existe todavia. Se omite arranque de Quarkus." -ForegroundColor Cyan
 }
 
 if (Test-Path $middleDir) {
     $middleMvnw = Join-Path $middleDir "mvnw.cmd"
     if (Test-Path $middleMvnw) {
         Start-ServiceJob -JobName "forum-middle" -ServiceDir $middleDir -Command $middleMvnw -Arguments @("spring-boot:run") | Out-Null
-        Write-Host "✓ Job forum-middle iniciado" -ForegroundColor Green
+        Write-Host "OK Job forum-middle iniciado" -ForegroundColor Green
     } elseif (Test-Tool -Name "mvn") {
         Start-ServiceJob -JobName "forum-middle" -ServiceDir $middleDir -Command "mvn" -Arguments @("spring-boot:run") | Out-Null
-        Write-Host "✓ Job forum-middle iniciado" -ForegroundColor Green
+        Write-Host "OK Job forum-middle iniciado" -ForegroundColor Green
     } else {
-        Write-Host "⚠ Se encontró middle/, pero no mvnw.cmd ni mvn en PATH. Middle no iniciado." -ForegroundColor Yellow
+        Write-Host "WARN Se encontro middle/, pero no mvnw.cmd ni mvn en PATH. Middle no iniciado." -ForegroundColor Yellow
     }
 
     if (-not $NoWait) {
         if (Wait-HttpReady -Url "http://localhost:3000/health" -MaxWaitSeconds 90) {
-            Write-Host "✓ Middle disponible en http://localhost:3000" -ForegroundColor Green
+            Write-Host "OK Middle disponible en http://localhost:3000" -ForegroundColor Green
         } else {
-            Write-Host "⚠ Middle no respondió en /health dentro del tiempo esperado." -ForegroundColor Yellow
+            Write-Host "WARN Middle no respondio en /health dentro del tiempo esperado." -ForegroundColor Yellow
         }
     }
 } else {
-    Write-Host "ℹ Carpeta middle/ no existe todavía. Se omite arranque de Spring Boot." -ForegroundColor Cyan
+    Write-Host "INFO Carpeta middle/ no existe todavia. Se omite arranque de Spring Boot." -ForegroundColor Cyan
 }
 
 Write-Host "`n[4/4] Iniciando Frontend (si existe)..." -ForegroundColor Yellow
 
 if (Test-Path $frontendDir) {
     if (-not (Test-Tool -Name "npm")) {
-        Write-Host "⚠ Se encontró frontend/, pero npm no está disponible. Frontend no iniciado." -ForegroundColor Yellow
+        Write-Host "WARN Se encontro frontend/, pero npm no esta disponible. Frontend no iniciado." -ForegroundColor Yellow
     } else {
         Set-Location $frontendDir
         if (-not (Test-Path (Join-Path $frontendDir "node_modules"))) {
@@ -206,23 +206,23 @@ if (Test-Path $frontendDir) {
         }
 
         Start-ServiceJob -JobName "forum-frontend" -ServiceDir $frontendDir -Command "npm" -Arguments @("start") | Out-Null
-        Write-Host "✓ Job forum-frontend iniciado" -ForegroundColor Green
+        Write-Host "OK Job forum-frontend iniciado" -ForegroundColor Green
 
         if (-not $NoWait) {
             if (Wait-HttpReady -Url "http://localhost:4200" -MaxWaitSeconds 120) {
-                Write-Host "✓ Frontend disponible en http://localhost:4200" -ForegroundColor Green
+                Write-Host "OK Frontend disponible en http://localhost:4200" -ForegroundColor Green
             } else {
-                Write-Host "⚠ Frontend no respondió en http://localhost:4200 dentro del tiempo esperado." -ForegroundColor Yellow
+                Write-Host "WARN Frontend no respondio en http://localhost:4200 dentro del tiempo esperado." -ForegroundColor Yellow
             }
         }
     }
 } else {
-    Write-Host "ℹ Carpeta frontend/ no existe todavía. Se omite arranque de Angular." -ForegroundColor Cyan
+    Write-Host "INFO Carpeta frontend/ no existe todavia. Se omite arranque de Angular." -ForegroundColor Cyan
 }
 
-Write-Host "`n╔═══════════════════════════════════════════════════════════════╗" -ForegroundColor Green
-Write-Host "║                   ✓ AMBIENTE LEVANTADO                       ║" -ForegroundColor Green
-Write-Host "╚═══════════════════════════════════════════════════════════════╝" -ForegroundColor Green
+Write-Host "`n===============================================================" -ForegroundColor Green
+Write-Host " AMBIENTE LEVANTADO" -ForegroundColor Green
+Write-Host "===============================================================" -ForegroundColor Green
 
 Write-Host "`nURLs esperadas:" -ForegroundColor Cyan
 Write-Host "  Frontend:     http://localhost:4200"

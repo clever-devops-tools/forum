@@ -77,19 +77,35 @@ Al terminar esta actividad, la app debe permitir:
 
 ---
 
+### 1. Clonar el repositorio
+
+Clona el repositorio público desde Bitbucket para obtener la base del proyecto en tu máquina local.
+
+```bash
+git clone https://forumclever-admin@bitbucket.org/forumclever/fullstackapp.git
+cd fullstackapp
+```
+
+### 2. Crear una nueva rama para el desarrollo
+
+Antes de comenzar, crea una nueva rama en tu repositorio para trabajar en el desarrollo de la aplicación. Esto asegura que los cambios realizados estén aislados del resto del proyecto.
+
+```bash
+git checkout -b mi1nombre-mi1apellido
+```
+
+---
+
 ## 🧩 Paso 1. Estructura base de la app
 
 Arranquemos por lo básico: dejar lista la estructura del proyecto para separar claramente las tres capas de la solución.
 
-### Comando sugerido
-
-```powershell
-mkdir api, middle, frontend
-```
-
 ### Prompt sugerido para Copilot Chat
 
 ```text
+Estoy construyendo una aplicación fullstack de búsqueda de personas con Quarkus, Spring Boot y Angular.
+Quiero que me ayudes a generar código consistente entre las tres capas, manteniendo nombres claros, manejo de errores y una buena experiencia de usuario.
+
 Necesito crear en una nueva carpeta con el nombre de mi rama, una aplicación fullstack para búsqueda de personas con tres capas:
 - api: backend REST en Quarkus (Java)
 - middle: BFF en Spring Boot (Java)
@@ -106,6 +122,12 @@ Ayúdame a definir la estructura base de carpetas y los archivos principales que
 
 Si Copilot te propone carpetas o archivos adicionales, revísalos y quédate solo con lo que aporte al objetivo del workshop.
 
+### Comando sugerido
+
+```powershell
+mkdir api, middle, frontend
+```
+
 ---
 
 ## 🔷 Paso 2. Crear la API con Quarkus
@@ -114,10 +136,11 @@ Ahora vas a construir la capa backend. El objetivo es dejar una API REST simple,
 
 ### 1. Crear el proyecto Quarkus
 
-Ejecuta este comando para generar la base del proyecto:
+**Prompt sugerido:**
 
-```powershell
-cd api
+```text
+Debo Crear el proyecto Quarkus LOCALMENTE en mi carpeta api, para ello debo ejecutar el siguiente comando:
+
 mvn io.quarkus.platform:quarkus-maven-plugin:3.8.1:create `
   -DprojectGroupId=com.forum.workshop `
   -DprojectArtifactId=forum-api `
@@ -180,8 +203,10 @@ Mantén esta configuración mínima. En esta guía no estamos cubriendo infraest
 
 Cuando termines de generar las clases base, compila para validar que la capa backend quedó consistente.
 
-```powershell
-cd C:\ruta\a\tu\repo\api
+**Prompt sugerido:**
+
+```text
+Necesito compilar las clases bases para validar que la capa backend quedó consistente con el siguiente comando en la carpeta api:
 mvn clean package
 ```
 
@@ -198,13 +223,7 @@ mvn clean package
 
 Con la API ya modelada, ahora toca crear la capa intermedia. Este BFF será el puente entre Angular y Quarkus.
 
-### 1. Inicializar proyecto Spring Boot
-
-```powershell
-cd middle
-```
-
-### 2. Crear el backend intermedio
+### 1. Crear el backend intermedio, Inicializar el proyecto Spring Boot
 
 **Prompt sugerido:**
 
@@ -221,11 +240,13 @@ Debe incluir:
 - manejo de errores 400, 404 y 503
 ```
 
-### 3. Configuración
+### 2. Corrobora la Configuración
 
-En `application.properties`:
+**Prompt sugerido:**
 
-```properties
+```text
+Corrobora y duvuelve la configuración en el archivo "application.properties", el mismo debe tener estas y otras configuraciones extras si es necesario:
+
 server.port=3000
 quarkus.api.url=${QUARKUS_API_URL:http://localhost:8080}
 quarkus.api.timeout-ms=${API_TIMEOUT:5000}
@@ -233,8 +254,11 @@ quarkus.api.timeout-ms=${API_TIMEOUT:5000}
 
 ### 4. Ejecutar el middle
 
-```powershell
-cd middle
+**Prompt sugerido:**
+
+```text
+Ejecuta el middle, para corroborar su funcionamiento con el siguiente comando en la carpeta indicada:
+
 mvn spring-boot:run
 ```
 
@@ -252,10 +276,11 @@ Llegó el momento de construir la capa visible para el usuario. Aquí vas a cone
 
 ### 1. Crear el proyecto Angular
 
-Genera la base del frontend con Angular standalone:
+**Prompt sugerido:**
 
-```powershell
-cd frontend
+```text
+Genera la base del frontend con Angular standalone con el siguiente comando en la carpeta frontend:
+
 npx @angular/cli@18 new . --skip-git --standalone --style=scss
 ```
 
@@ -349,29 +374,17 @@ No necesitas una UI compleja. Para esta actividad, prioriza legibilidad, orden v
 
 En este último tramo, la meta es comprobar que todo lo que construiste conversa correctamente entre capas.
 
-### Comandos sugeridos
-
-```powershell
-# API
-cd api
-mvn clean package
-
-# BFF (Spring Boot)
-cd ..\.\middle
-mvn clean package
-
-# Frontend
-cd ..\frontend
-npm install
-```
-
 ### Prompt sugerido para validación con Copilot
 
 ```text
-Revisa esta aplicación fullstack y explícame el flujo completo desde el formulario Angular hasta la API Quarkus, incluyendo el rol del BFF en Spring Boot y la transformación de datos.
+Revisa esta aplicación fullstack y explícame el flujo completo desde el formulario Angular hasta la API Quarkus, incluyendo el rol del BFF en Spring Boot y la transformación de datos. Utiliza algunos de estos comandos, en cada una de las carpetas indicadas, si lo crees necesario:
+
+para "/api": mvn clean package
+para "/middle": mvn clean package
+para "/frontend": npm install
 ```
 
-Úsalo al final de la práctica para reforzar el entendimiento técnico del grupo, no solo para validar que “funciona”.
+Necesitamos utilizarlo final de la práctica para reforzar el entendimiento técnico del grupo, no solo para validar que “funciona”.
 
 ### Escenario funcional esperado
 
@@ -407,20 +420,9 @@ public Response searchPersona(@QueryParam("idTipo") String idTipo, @QueryParam("
 }
 ```
 
-**Prompt sugerido:**
-
-```text
-Tengo esta función con comentarios descriptivos. Usa esos comentarios como guía para generar la implementación:
-
-[pega el código con comentarios]
-
-Genera el código que implemente exactamente lo que dicen los comentarios.
-```
-
 **Ventajas:**
 - Código autodocumentado
 - Especificaciones claras para Copilot
-- Facilita el entendimiento durante la demo
 
 ---
 
@@ -478,9 +480,9 @@ copilot explain "ERROR in ./src/app/app.component.ts: Cannot find module '@angul
 
 Copilot puede indicarte que necesitas importar FormsModule en el componente.
 
-**Caso de uso en el workshop:**
+**Caso de uso:**
 
-Cuando los participantes encuentren errores durante la construcción, pueden usar Copilot CLI para obtener explicaciones rápidas sin pausar la sesión.
+Cuando los alguno de los participantes encuentren errores durante la construcción, pueden usar Copilot CLI para obtener explicaciones rápidas sin pausar su trabajo.
 
 ---
 
@@ -529,7 +531,7 @@ Tengo este controlador Spring Boot que busca personas. Sugiere mejoras para:
 4. Usar un servicio separado para la transformación
 5. Hacer el código más legible y mantenible
 
-[pega el código]
+[pega el código o haz una referencia al archivo y lineas de codigo]
 ```
 
 **Resultado esperado:**
@@ -553,7 +555,7 @@ No vamos a ejecutar pruebas en este workshop, pero generarlas con Copilot es una
 ```text
 Genera pruebas unitarias para este servicio Angular:
 
-[pega PersonaService]
+[pega PersonaService o haz una referencia al archivo y lineas de codigo]
 
 Las pruebas deben:
 1. Verificar que buscarPersona() llama al endpoint correcto
@@ -571,7 +573,7 @@ Usa jasmine y karma.
 ```text
 Genera pruebas unitarias para este recurso Quarkus:
 
-[pega PersonaResource]
+[pega PersonaResource o haz una referencia al archivo y lineas de codigo]
 
 Las pruebas deben:
 1. Verificar que GET /api/personas/search con parámetros válidos retorna 200
@@ -598,9 +600,7 @@ Copilot puede ayudarte a identificar vulnerabilidades de seguridad comunes y sug
 **Prompt sugerido:**
 
 ```text
-Revisa este código Spring Boot y detecta vulnerabilidades de seguridad:
-
-[pega tu controlador y servicio de middle]
+Revisa el código del controlador del middle (Spring Boot) y detecta vulnerabilidades de seguridad:
 
 Específicamente:
 1. ¿Hay protección contra inyección de SQL?
@@ -611,7 +611,7 @@ Específicamente:
 6. ¿Se logean errores sensibles?
 ```
 
-**Mitigaciones típicas que Copilot sugiere:**
+**Mitigaciones típicas que Copilot puede sugerir:**
 
 ```java
 // 1. Validación de parámetros de entrada
@@ -634,9 +634,9 @@ public ResponseEntity<Map<String, String>> handleAny(Exception ex) {
 **Prompt sugerido:**
 
 ```text
-Revisa esta entidad JPA y detecta vulnerabilidades de seguridad:
+Revisa la entidad Persona JPA y detecta vulnerabilidades de seguridad:
 
-[pega Persona.java]
+[pega Persona.java o haz una referencia al archivo]
 
 Específicamente:
 1. ¿Hay validación de campos (NotNull, Size, etc.)?
@@ -673,30 +673,11 @@ public class Persona extends PanacheEntity {
 }
 ```
 
-**Checklist de seguridad post-workshop:**
-
-- [ ] Validar todas las entradas de usuario
-- [ ] Usar HTTPS en producción
-- [ ] Configurar CORS restrictivo (no `*`)
-- [ ] Implementar autenticación y autorización
-- [ ] Auditar logs para actividad sospechosa
-- [ ] Usar variables de entorno para secretos (no hardcodear)
-- [ ] Mantener dependencias actualizadas
-- [ ] Implementar rate limiting
-- [ ] Usar prepared statements (Panache lo hace por defecto)
-
 ---
 
 ## 💡 Prompts sugeridos
 
-Estos prompts sirven como apoyo rápido durante la sesión. Puedes reutilizarlos tal cual o ajustarlos según el ritmo del grupo.
-
-### Prompt general de contexto
-
-```text
-Estoy construyendo una aplicación fullstack de búsqueda de personas con Quarkus, Spring Boot y Angular.
-Quiero que me ayudes a generar código consistente entre las tres capas, manteniendo nombres claros, manejo de errores y una buena experiencia de usuario.
-```
+Estos prompts sirven como apoyo rápido durante el workshop. Podemos utilizarlos tal cual o ajustarlos según sea necesario.
 
 ### Prompt para mejorar backend (Quarkus)
 
@@ -722,69 +703,6 @@ Revisa mi controlador MiddleController y servicio PersonaGatewayService y sugier
 
 ```text
 Revisa mi AppComponent y mis componentes Angular para que la búsqueda muestre estados de loading, éxito y error de manera clara y profesional.
-```
-
-### Prompt para explicación técnica
-
-```text
-Explícame esta arquitectura fullstack (Quarkus API → Spring Boot BFF → Angular frontend) en términos simples para presentarla durante un workshop.
-Indicame qué problema resuelve cada capa y cómo se comunican.
-```
-
-### Prompts para tópicos avanzados
-
-#### Desarrollo Guiado por Comentarios
-
-```text
-Tengo esta función con comentarios descriptivos muy claros sobre qué debe hacer. Genera la implementación exacta basándose en esos comentarios:
-
-[pega código con comentarios]
-
-Asegúrate de que el código implementa todo lo que dicen los comentarios.
-```
-
-#### GitHub Copilot CLI
-
-```text
-Explícame cómo usar GitHub Copilot CLI para:
-1. Generar un comando Maven que compile la API Quarkus
-2. Generar un comando Maven que ejecute el BFF Spring Boot
-3. Generar un comando npm para instalar y ejecutar el frontend Angular
-4. Explicar un error de compilación en cualquiera de las tres capas
-```
-
-#### Refactorización y Optimización
-
-```text
-Revisa este código y sugiere mejoras para rendimiento, legibilidad y mantenibilidad:
-
-[pega código]
-
-Específicamente, identifica:
-1. Duplicación de código
-2. Oportunidades para funciones helper
-3. Mejoras de error handling
-4. Validación de entrada
-```
-
-#### Pruebas Unitarias
-
-```text
-Genera pruebas unitarias (sin ejecutarlas) para este código. Identifica qué casos de prueba son críticos:
-
-[pega código]
-
-Usa el framework de testing apropiado para la tecnología.
-```
-
-#### Seguridad
-
-```text
-Audit de seguridad: revisa este código fullstack y detecta vulnerabilidades comunes:
-
-[pega código]
-
-Para cada vulnerabilidad, sugiere una mitigación específica y código de ejemplo.
 ```
 
 ---

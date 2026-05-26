@@ -1,0 +1,22 @@
+# Java / Maven
+**/target/
+.mvn/wrapper/maven-wrapper.jar
+
+# Quarkus
+**/.quarkus/
+
+# Node / Angular
+**/node_modules/
+**/dist/
+**/.angular/
+**/coverage/
+
+# IDE / OS
+.vscode/
+.idea/
+*.iml
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
